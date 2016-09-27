@@ -4,28 +4,31 @@ import pandas as pd
 import random
 
 
+n_produtos=1000
 file_in="reviews_Electronics_5.json.gz"
 file_out="data/eletronic_sample.csv"
 min_sentences=3
 min_votes = 5
 min_comments=30
-max_produtos=1000
 
 g = gzip.open(file_in, 'r')
 
 
-def helpf(x): 
+def helpf(x):
+	x = str(x['helpful']) 
 	try:
-		pos = x['helpful'].replace("[","").replace("]","").split(',')[0]
-		neg = x['helpful'].replace("[","").replace("]","").split(',')[1]
-		tot = x['helpful'].replace("[","").replace("]","").split(',')[1]
+		pos = x.replace("[","").replace("]","").split(',')[0]
+		neg = x.replace("[","").replace("]","").split(',')[1]
+		tot = x.replace("[","").replace("]","").split(',')[1]
 		return float ( float(pos) /  float(tot) )
 	except:
 		return 0
 
 def tot(x): 
+	x = str(x['helpful'])
+	#print x.replace("[","").replace("]","").split(',')[1]
 	try:
-		return x['helpful'].replace("[","").replace("]","").split(',')[1]
+		return x.replace("[","").replace("]","").split(',')[1]
 	except:
 		return 0
 
@@ -50,6 +53,9 @@ for l in g:
     	print ("processado:+"+str(count))
     	ind=0
 
+    #if (count > 10000):
+    #	break
+
 
 
 dfProducts=pd.DataFrame(products)
@@ -58,15 +64,19 @@ dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
 dfProducts['tot']=dfProducts.apply(tot,axis=1)
 
 
-#min votes
+#filtro de minimo de votos
 dfProducts = dfProducts[dfProducts['tot'].astype(int)>min_votes]
 
-#min comments
+#filtro minimo comentarios
 x=dfProducts.groupby('asin').size() >min_comments
 
 mylist= list(x[x==True].keys())
-sample = [ mylist[i] for i in sorted(random.sample(xrange(len(mylist)), max_produtos)) ]
+
+max_p=n_produtos
+if (len(mylist)<n_produtos):
+	max_p=len(mylist)
+sample = [ mylist[i] for i in sorted(random.sample(xrange(len(mylist)), max_p)) ]
 
 
-#exporting
+
 dfProducts[dfProducts['asin'].isin(sample)].to_csv(file_out)
