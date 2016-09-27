@@ -266,7 +266,7 @@ count=1
 corr_global=[]
 corr_word_global=[]
 min_votes=5
-min_comments=40
+min_comments=30
 #max_comments=100
 
 precision_global=[]
