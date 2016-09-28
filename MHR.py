@@ -12,6 +12,8 @@ import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 import math
+import matplotlib.pyplot as plt
+
 
 
 dataset='data/eletronic_sample.csv'
@@ -105,11 +107,15 @@ def clear_string(value):
 		value= value.replace(c,"")
 
 	return value.lower()
+
+
+
+
 class PageRank_NoTeleport:
     "Power iteration but does not address Spider trap problem or Dead end problem "
     epsilon = 0.0001
 
-    def __init__(self, beta=0.85, epsilon=0.0001):
+    def __init__(self, beta=0.85, epsilon=0.00001):
         self.epsilon = epsilon
 
     def distance(self, v1, v2):
@@ -148,7 +154,7 @@ def create_matrix_sentence(comments):
 	comment_count = len(comments)
 	tfidf = TfidfVectorizer().fit_transform(comments)
 	matrix_sentences = (tfidf * tfidf.T).A
-	return matrix_sentences
+	return 1 - matrix_sentences
     
 
 
@@ -157,12 +163,12 @@ def create_matrix_stars(stars):
 
 	for row in range(len(stars)):
 		for col in range(len(stars)):
-			matrix_stars[row][col]= abs(stars[row]-stars[col])+1
+			matrix_stars[row][col]= abs(stars[row]-stars[col])
 			#print "ditance" + str(matrix_stars[row][col])
 
 
 	matrix_stars = matrix_stars/5
-
+	matrix_stars=matrix_stars
 	return matrix_stars
 
 
@@ -170,9 +176,8 @@ def create_matrix_stars(stars):
 def getMostSalientWithStar(comments, stars, comments_count):
 
 	threshold = 0.01
-	epsilon = 0.01
 
-	alpha=1
+	alpha=0.6523
 
 
 	matrix_sentences = create_matrix_sentence(comments )
@@ -182,13 +187,20 @@ def getMostSalientWithStar(comments, stars, comments_count):
 
 	
 
-	matrix = np.array(alpha*matrix_sentences) / np.array(matrix_stars)
 
 
-	threshold = np.mean(matrix_sentences)*1.7
+	matrix = np.array(alpha*matrix_sentences) + ((1-alpha)* np.array(matrix_stars))
+	#matrix = matrix/np.amax(matrix)
+
+	#matrix_sentences =alpha* matrix_sentences
+	#matrix_stars=(1-alpha)* matrix_stars
+	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
+
+	threshold = np.mean(matrix)
+	print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
-			if matrix[row, col] > threshold:
+			if matrix[row, col] < threshold:
 			    matrix[row, col] = 1.0
 			    #degrees[row] += 1
 			else:
@@ -204,7 +216,7 @@ def getMostSalientWithStar(comments, stars, comments_count):
 	return scores
 
 
-def cal_metrics(a,b,n_ref,n_feat):
+def cal_metrics(a,b,k):
 	precision=0
 	recall=0
 	f1=0
@@ -212,13 +224,13 @@ def cal_metrics(a,b,n_ref,n_feat):
 	try:
 		count=0
 		ind=1
-		for i in (-np.array(b)).argsort()[:n_feat]:
-			if (i in (-np.array(a)).argsort()[:n_ref]):
-				count=count+1
-				precision=precision+(count/float(ind))
+		for i in (-np.array(b)).argsort()[:k]:
+			if (i in (-np.array(a)).argsort()[:k]):
+				#count=count+1
+				precision=precision+1
 			ind=ind+1
 		
-		precision=precision/float(count)
+		precision=float(precision)/float(k)
 	except:
 		precision=0
 	#precision=len(np.intersect1d(-(np.array(a)).argsort()[:n_ref], -(np.array(b)).argsort()[:n_feat] ))/float(n_feat)
@@ -228,10 +240,10 @@ def cal_metrics(a,b,n_ref,n_feat):
 	try:
 		count=0
 		ind=1
-		for i in (-np.array(b)).argsort()[:n_feat]:
-			if (i in (-np.array(a)).argsort()[:n_ref]):
+		for i in (-np.array(b)).argsort()[:k]:
+			if (i in (-np.array(a)).argsort()[:k]):
 				count=count+1
-				recall=recall+(count/float(n_ref))
+				recall=recall+(count/float(k))
 			ind=ind+1
 		
 		recall=recall/float(count)
@@ -246,6 +258,77 @@ def cal_metrics(a,b,n_ref,n_feat):
 	return precision,recall,f1
 
 
+
+def dcg_at_k(r, k, method=0):
+    """Score is discounted cumulative gain (dcg)
+    Relevance is positive real values.  Can use binary
+    as the previous methods.
+    Example from
+    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
+    >>> dcg_at_k(r, 1)
+    3.0
+    >>> dcg_at_k(r, 1, method=1)
+    3.0
+    >>> dcg_at_k(r, 2)
+    5.0
+    >>> dcg_at_k(r, 2, method=1)
+    4.2618595071429155
+    >>> dcg_at_k(r, 10)
+    9.6051177391888114
+    >>> dcg_at_k(r, 11)
+    9.6051177391888114
+    Args:
+        r: Relevance scores (list or numpy) in rank order
+            (first element is the first item)
+        k: Number of results to consider
+        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
+                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
+    Returns:
+        Discounted cumulative gain
+    """
+    r = np.asfarray(r)[:k]
+    if r.size:
+        if method == 0:
+            return r[0] + np.sum(r[1:] / np.log2(np.arange(2, r.size + 1)))
+        elif method == 1:
+            return np.sum(r / np.log2(np.arange(2, r.size + 2)))
+        else:
+            raise ValueError('method must be 0 or 1.')
+    return 0.
+
+
+def ndcg_at_k(r, k, method=0):
+    """Score is normalized discounted cumulative gain (ndcg)
+    Relevance is positive real values.  Can use binary
+    as the previous methods.
+    Example from
+    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
+    >>> ndcg_at_k(r, 1)
+    1.0
+    >>> r = [2, 1, 2, 0]
+    >>> ndcg_at_k(r, 4)
+    0.9203032077642922
+    >>> ndcg_at_k(r, 4, method=1)
+    0.96519546960144276
+    >>> ndcg_at_k([0], 1)
+    0.0
+    >>> ndcg_at_k([1], 2)
+    1.0
+    Args:
+        r: Relevance scores (list or numpy) in rank order
+            (first element is the first item)
+        k: Number of results to consider
+        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
+                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
+    Returns:
+        Normalized discounted cumulative gain
+    """
+    dcg_max = dcg_at_k(sorted(r, reverse=True), k, method)
+    if not dcg_max:
+        return 0.
+    return dcg_at_k(r, k, method) / dcg_max
 
 
 
@@ -272,6 +355,8 @@ min_comments=30
 precision_global=[]
 recall_global=[]
 f1_global=[]
+
+ndcg_global=[]
 
 grouped=dfProducts[dfProducts['tot'].astype(int)>min_votes].groupby('asin')
 
@@ -309,15 +394,22 @@ for name, group in grouped:
 		corr_global.append(corr_local)
 
 
-		precision, recall, f1 = cal_metrics(values_test,scores,5,10)
+		precision, recall, f1 = cal_metrics(values_test,scores,10)
 		precision_global.append(precision)
 		recall_global.append(recall)
 		f1_global.append(f1)
-		
+
+
+		k=5
+		ind = (-np.array(scores)).argsort()
+		a = np.array(values_test)[ind]
+		ndcg = ndcg_at_k(a, k)
+		ndcg_global.append(ndcg)
 		print "#"+str(count)+" product_id=" + str(name)
 		print "total comentarios:" +str(len(clear_sentences))
 
-		#print "precision="+str(np.mean(precision_global))
+		print "precision="+str(np.mean(precision_global))
+		print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
 		#print "recall="+str(np.mean(recall_global))
 		#print "f1="+str(np.mean(f1_global))
 		#print "corr word_count="+ str(corr_word_local)
@@ -327,6 +419,7 @@ for name, group in grouped:
 
 		#print scores
 		print "##################################"
+
 
 
 dfProducts.to_csv(outputDataset)
