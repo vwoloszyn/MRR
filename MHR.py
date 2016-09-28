@@ -16,7 +16,9 @@ import matplotlib.pyplot as plt
 
 
 
-dataset='data/eletronic_sample.csv'
+#dataset='data/eletronic_sample.csv'
+dataset='data/eletronic_scores.csv'
+
 outputDataset='data/eletronic_scores.csv'
 
 
@@ -197,7 +199,7 @@ def getMostSalientWithStar(comments, stars, comments_count):
 	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
 
 	threshold = np.mean(matrix)
-	print threshold
+	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
 			if matrix[row, col] < threshold:
@@ -334,6 +336,87 @@ def ndcg_at_k(r, k, method=0):
 
 
 
+
+def executeFromDf(df):
+	count=1
+	corr_global=[]
+	corr_word_global=[]
+	min_votes=5
+	min_comments=30
+	#max_comments=100
+
+	precision_global=[]
+	recall_global=[]
+	f1_global=[]
+
+	ndcg_global=[]
+
+	grouped=dfProducts[dfProducts['tot'].astype(int)>min_votes].groupby('asin')
+
+	for name, group in grouped:	
+		dffiltro = (dfProducts['asin']==name) & (dfProducts['tot'].astype(int)>min_votes) 
+
+		comments_count = dfProducts[dffiltro ]['tot'].values
+		if ( (len(comments_count)>min_comments) ):
+			count=count+1 
+			clear_sentences=[]
+			stars=[]
+
+			word_count=[]
+			for s in dfProducts[dffiltro].T.to_dict().values():
+				word_count.append(len(s['reviewText'].split(" ")))
+				clear_sentences.append(remove_stop(clear_string(s['reviewText'])))
+				stars.append(float(s['overall']))
+
+
+			scores= getMostSalientWithStar(clear_sentences,stars,10)
+
+			dfProducts.loc[dffiltro,'powerWithStar']=scores
+
+
+
+			#########################################
+			#############  METRICS  ################
+			#########################################
+
+			values_test = dfProducts[dffiltro]['helpfulness'].T.to_dict().values()
+			corr_local=np.corrcoef(values_test,scores)[0][1]
+			corr_word_local=np.corrcoef(values_test,word_count)[0][1]
+
+			corr_word_global.append(corr_word_local)
+			corr_global.append(corr_local)
+
+
+			precision, recall, f1 = cal_metrics(values_test,scores,10)
+			precision_global.append(precision)
+			recall_global.append(recall)
+			f1_global.append(f1)
+
+
+			k=5
+			ind = (-np.array(scores)).argsort()
+			a = np.array(values_test)[ind]	
+			ndcg = ndcg_at_k(a, k)
+			ndcg_global.append(ndcg)
+			if __name__ == "__main__":
+				print "#"+str(count)+" product_id=" + str(name)
+				print "total comentarios:" +str(len(clear_sentences))
+
+				print "precision="+str(np.mean(precision_global))
+				print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
+				#print "recall="+str(np.mean(recall_global))
+				#print "f1="+str(np.mean(f1_global))
+				#print "corr word_count="+ str(corr_word_local)
+				print "corr word_count="+ str(np.mean(corr_word_global)) + " (" + str(corr_word_local) + ")"
+				#print "correlacao local=" + str(corr_local)
+				print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
+
+				#print scores
+				print "##################################"
+	return dfProducts
+
+
+
 ##################
 ##### MAIN #######
 ##################
@@ -341,85 +424,11 @@ def ndcg_at_k(r, k, method=0):
 
 
 
-dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
-dfProducts['tot']=dfProducts.apply(tot,axis=1)
 
+	dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
+	dfProducts['tot']=dfProducts.apply(tot,axis=1)
 
-count=1
-corr_global=[]
-corr_word_global=[]
-min_votes=5
-min_comments=30
-#max_comments=100
+	executeFromDf(dfProducts)
+	
 
-precision_global=[]
-recall_global=[]
-f1_global=[]
-
-ndcg_global=[]
-
-grouped=dfProducts[dfProducts['tot'].astype(int)>min_votes].groupby('asin')
-
-for name, group in grouped:	
-	dffiltro = (dfProducts['asin']==name) & (dfProducts['tot'].astype(int)>min_votes) 
-
-	comments_count = dfProducts[dffiltro ]['tot'].values
-	if ( (len(comments_count)>min_comments) ):
-		count=count+1 
-		clear_sentences=[]
-		stars=[]
-
-		word_count=[]
-		for s in dfProducts[dffiltro].T.to_dict().values():
-			word_count.append(len(s['reviewText'].split(" ")))
-			clear_sentences.append(remove_stop(clear_string(s['reviewText'])))
-			stars.append(float(s['overall']))
-
-
-		scores= getMostSalientWithStar(clear_sentences,stars,10)
-
-		dfProducts.loc[dffiltro,'powerWithStar']=scores
-
-
-
-		#########################################
-		#############  METRICS  ################
-		#########################################
-
-		values_test = dfProducts[dffiltro]['helpfulness'].T.to_dict().values()
-		corr_local=np.corrcoef(values_test,scores)[0][1]
-		corr_word_local=np.corrcoef(values_test,word_count)[0][1]
-
-		corr_word_global.append(corr_word_local)
-		corr_global.append(corr_local)
-
-
-		precision, recall, f1 = cal_metrics(values_test,scores,10)
-		precision_global.append(precision)
-		recall_global.append(recall)
-		f1_global.append(f1)
-
-
-		k=5
-		ind = (-np.array(scores)).argsort()
-		a = np.array(values_test)[ind]
-		ndcg = ndcg_at_k(a, k)
-		ndcg_global.append(ndcg)
-		print "#"+str(count)+" product_id=" + str(name)
-		print "total comentarios:" +str(len(clear_sentences))
-
-		print "precision="+str(np.mean(precision_global))
-		print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
-		#print "recall="+str(np.mean(recall_global))
-		#print "f1="+str(np.mean(f1_global))
-		#print "corr word_count="+ str(corr_word_local)
-		print "corr word_count="+ str(np.mean(corr_word_global)) + " (" + str(corr_word_local) + ")"
-		#print "correlacao local=" + str(corr_local)
-		print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
-
-		#print scores
-		print "##################################"
-
-
-
-dfProducts.to_csv(outputDataset)
+	#dfProducts.to_csv(outputDataset)
