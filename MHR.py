@@ -16,13 +16,7 @@ import matplotlib.pyplot as plt
 
 
 
-#dataset='data/eletronic_sample.csv'
-dataset='data/eletronic_scores.csv'
 
-outputDataset='data/eletronic_scores.csv'
-
-
-dfProducts = pd.read_csv(dataset)
 
 #filtrar somente o produto com a maior quantidade de comentarios
 ##x=dfProducts.groupby('asin').size().sort_values(ascending=0)[:2]
@@ -337,7 +331,8 @@ def ndcg_at_k(r, k, method=0):
 
 
 
-def executeFromDf(df):
+def executeFromDf(dfProducts):
+	
 	count=1
 	corr_global=[]
 	corr_word_global=[]
@@ -422,7 +417,13 @@ def executeFromDf(df):
 ##################
 
 
+	#dataset='data/eletronic_sample.csv'
+	dataset='data/eletronic_scores.csv'
 
+	outputDataset='data/eletronic_scores.csv'
+
+
+	dfProducts = pd.read_csv(dataset)
 
 
 	dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
