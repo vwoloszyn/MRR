@@ -173,7 +173,7 @@ def getMostSalientWithStar(comments, stars, comments_count):
 
 	threshold = 0.01
 
-	alpha=0.6523
+	alpha=0.9
 
 
 	matrix_sentences = create_matrix_sentence(comments )
@@ -186,13 +186,13 @@ def getMostSalientWithStar(comments, stars, comments_count):
 
 
 	matrix = np.array(alpha*matrix_sentences) + ((1-alpha)* np.array(matrix_stars))
-	#matrix = matrix/np.amax(matrix)
+	matrix = matrix/np.amax(matrix)
 
 	#matrix_sentences =alpha* matrix_sentences
 	#matrix_stars=(1-alpha)* matrix_stars
 	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
 
-	threshold = np.mean(matrix)
+	threshold = np.mean(matrix)*0.88
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
@@ -209,7 +209,7 @@ def getMostSalientWithStar(comments, stars, comments_count):
 	
 	#print scores
 	
-	return scores
+	return np.array(scores)
 
 
 def cal_metrics(a,b,k):
@@ -328,11 +328,38 @@ def ndcg_at_k(r, k, method=0):
 
 
 
+def calc_ndcg(df, column,k):
+    min_votes=5
+    min_comments=30
+
+    ndcg_global=[]
+
+
+    grouped=df[df['tot'].astype(int)>min_votes].groupby('asin')
+
+    for name, group in grouped:
+        dffiltro = (df['asin']==name) & (df['tot'].astype(int)>min_votes)
+
+        comments_count = df[dffiltro ]['tot'].values
+        if ( (len(comments_count)>min_comments) ):
+
+            values_test = df[dffiltro]['helpfulness'].values
+            scores = df[dffiltro][column].values
+
+
+            ind = (-np.array(scores)).argsort()
+            a = np.array(values_test)[ind]	
+            ndcg = ndcg_at_k(a, k)
+            
+            print "product="+str(name)+" ndcg="+str(ndcg)
+            ndcg_global.append(ndcg)
+    return ndcg_global
+
 
 
 
 def executeFromDf(dfProducts):
-	
+
 	count=1
 	corr_global=[]
 	corr_word_global=[]
@@ -366,7 +393,7 @@ def executeFromDf(dfProducts):
 
 			scores= getMostSalientWithStar(clear_sentences,stars,10)
 
-			dfProducts.loc[dffiltro,'powerWithStar']=scores
+			dfProducts.ix[dffiltro,'powerWithStar']=scores
 
 
 
@@ -375,50 +402,52 @@ def executeFromDf(dfProducts):
 			#########################################
 
 			values_test = dfProducts[dffiltro]['helpfulness'].T.to_dict().values()
-			corr_local=np.corrcoef(values_test,scores)[0][1]
-			corr_word_local=np.corrcoef(values_test,word_count)[0][1]
-
-			corr_word_global.append(corr_word_local)
-			corr_global.append(corr_local)
-
-
-			precision, recall, f1 = cal_metrics(values_test,scores,10)
-			precision_global.append(precision)
-			recall_global.append(recall)
-			f1_global.append(f1)
-
+			
 
 			k=5
 			ind = (-np.array(scores)).argsort()
 			a = np.array(values_test)[ind]	
+
 			ndcg = ndcg_at_k(a, k)
 			ndcg_global.append(ndcg)
+
+
+			print "product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
 			if __name__ == "__main__":
 				print "#"+str(count)+" product_id=" + str(name)
 				print "total comentarios:" +str(len(clear_sentences))
 
-				print "precision="+str(np.mean(precision_global))
+				#print "precision="+str(np.mean(precision_global))
 				print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
 				#print "recall="+str(np.mean(recall_global))
 				#print "f1="+str(np.mean(f1_global))
 				#print "corr word_count="+ str(corr_word_local)
-				print "corr word_count="+ str(np.mean(corr_word_global)) + " (" + str(corr_word_local) + ")"
+				#print "corr word_count="+ str(np.mean(corr_word_global)) + " (" + str(corr_word_local) + ")"
 				#print "correlacao local=" + str(corr_local)
-				print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
+				#print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
 
 				#print scores
 				print "##################################"
-	return dfProducts
+
+
+	#
+
+	return dfProducts,ndcg_global
+
+
+
+
+
 
 
 
 ##################
 ##### MAIN #######
 ##################
-
+if __name__ == "__main__":
 
 	#dataset='data/eletronic_sample.csv'
-	dataset='data/eletronic_scores.csv'
+	dataset='data/eletronic_sample_counts.csv.gz'
 
 	outputDataset='data/eletronic_scores.csv'
 
@@ -426,10 +455,12 @@ def executeFromDf(dfProducts):
 	dfProducts = pd.read_csv(dataset)
 
 
-	dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
-	dfProducts['tot']=dfProducts.apply(tot,axis=1)
+	#dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
+	#dfProducts['tot']=dfProducts.apply(tot,axis=1)
 
-	executeFromDf(dfProducts)
+	dfProducts,ndcg_global= executeFromDf(dfProducts)
+
+	#print calc_ndcg(dfProducts, 'powerWithStar',5)
 	
 
 	#dfProducts.to_csv(outputDataset)
