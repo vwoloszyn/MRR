@@ -4,9 +4,9 @@ import pandas as pd
 import random
 
 
-n_produtos=1000
-file_in="reviews_Electronics_5.json.gz"
-file_out="data/eletronic_sample.csv"
+n_produtos=500
+file_in="reviews_Books_5.json.gz"
+file_out="data/book_sample.csv.gz"
 min_sentences=3
 min_votes = 5
 min_comments=30
@@ -49,12 +49,12 @@ for l in g:
 
     ind=ind+1
     count=count+1
-    if ind>1000:
+    if ind>10000:
     	print ("processado:+"+str(count))
     	ind=0
 
-    #if (count > 10000):
-    #	break
+    if (count > 2000000):
+    	break
 
 
 
@@ -79,4 +79,4 @@ sample = [ mylist[i] for i in sorted(random.sample(xrange(len(mylist)), max_p)) 
 
 
 
-dfProducts[dfProducts['asin'].isin(sample)].to_csv(file_out)
+dfProducts[dfProducts['asin'].isin(sample)].to_csv(file_out, compression='gzip')
