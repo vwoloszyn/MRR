@@ -17,11 +17,10 @@ import matplotlib.pyplot as plt
 
 
 
+matrix = []
+bin_matrix = []
+scores = []
 
-#filtrar somente o produto com a maior quantidade de comentarios
-##x=dfProducts.groupby('asin').size().sort_values(ascending=0)[:2]
-##mylist= list(x.keys())
-##dfProducts = dfProducts[dfProducts['asin'].isin(mylist)]
 
 def helpf(x): 
 	try:
@@ -169,11 +168,18 @@ def create_matrix_stars(stars):
 
 
 
-def getMostSalientWithStar(comments, stars, comments_count):
+def getMostSalientWithStar(comments, stars, comments_count,alpha=0.9,beta=-0.12):
 
-	threshold = 0.01
+	global matrix
+	global bin_matrix
+	global scores
 
-	alpha=0.9
+	bin_matrix=[]
+	matrix =[]
+	scores = []
+	#threshold = beta
+
+	#alpha=0.9
 
 
 	matrix_sentences = create_matrix_sentence(comments )
@@ -192,20 +198,22 @@ def getMostSalientWithStar(comments, stars, comments_count):
 	#matrix_stars=(1-alpha)* matrix_stars
 	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
 
-	threshold = np.mean(matrix)*0.88
+	bin_matrix=np.zeros((len(comments), len(comments)))
+
+	threshold = np.mean(matrix)*(1+beta)
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
 			if matrix[row, col] < threshold:
-			    matrix[row, col] = 1.0
+			    bin_matrix[row, col] = 1.0
 			    #degrees[row] += 1
 			else:
-			    matrix[row, col] = 0
+			    bin_matrix[row, col] = 0
 
 	
 	#print matrix
 	pr1 = PageRank_NoTeleport()
-	scores = pr1.compute(matrix)
+	scores = pr1.compute(bin_matrix)
 	
 	#print scores
 	
@@ -327,6 +335,15 @@ def ndcg_at_k(r, k, method=0):
     return dcg_at_k(r, k, method) / dcg_max
 
 
+def getMatrix():
+	global matrix
+	global bin_matrix
+	return matrix,bin_matrix
+
+def getScores():
+	global scores
+	return scores
+
 
 def calc_ndcg(df, column,k):
     min_votes=5
@@ -358,7 +375,7 @@ def calc_ndcg(df, column,k):
 
 
 
-def executeFromDf(dfProducts):
+def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 
 	count=1
 	corr_global=[]
@@ -391,7 +408,7 @@ def executeFromDf(dfProducts):
 				stars.append(float(s['overall']))
 
 
-			scores= getMostSalientWithStar(clear_sentences,stars,10)
+			scores= getMostSalientWithStar(clear_sentences,stars,10,alpha,beta)
 
 			dfProducts.ix[dffiltro,'powerWithStar']=scores
 
