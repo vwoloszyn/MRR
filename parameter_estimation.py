@@ -12,25 +12,39 @@ from sklearn.metrics import make_scorer
 from time import time
 
 
+file_out="data/parameters_estimation.csv"
+global_parameters=[]
+
 reviews_features = pd.read_csv('data/eletronic_sample_counts.csv.gz')
 
 
 
 import scipy.optimize as optimization
 
-quant_prod=100
+quant_prod=380
 sample=reviews_features.groupby('asin').size()[:quant_prod].to_dict().keys()
 
 #df=reviews_features[reviews_features['asin'].isin(sample)]
 #df_extra,ndcg_mhr = mhr.executeFromDf(df,0.9,-0.12)
 #print ndcg_mhr
 def func(params, xdata, ydata):
-    print params[0]
-    print params[1]
-    df_extra,ndcg_mhr = mhr.executeFromDf(xdata,params[0],params[1])
-    #return ndcg_mhr
-    print "mean ndcg="+str(np.mean(ndcg_mhr))
-    return (ydata - ndcg_mhr)
+	
+	global global_parameters
+	
+	record={}
+	record['alpha']=params[0]
+	record['beta']=params[1]
+
+	print params[0]
+	print params[1]
+	df_extra,ndcg_mhr = mhr.executeFromDf(xdata,params[0],params[1])
+	#return ndcg_mhr
+	print "mean ndcg="+str(np.mean(ndcg_mhr))
+	record['ndcg_mean']=np.mean(ndcg_mhr)
+	global_parameters.append(record)
+
+	pd.DataFrame(global_parameters).to_csv(file_out)
+	return (ydata - ndcg_mhr)
 
 #def func(x, a, b):
 #    print a
@@ -45,3 +59,7 @@ xdata = reviews_features[reviews_features['asin'].isin(sample)]
 tplFinal1,success=optimization.leastsq(func,x0[:],args=(xdata,ydata),epsfcn=0.1)
 #print optimization.curve_fit(func,  xdata, ydata, x0, bounds=((0,-1),(1,1)))
 #print ndcg_mhr
+
+
+
+print tplFinal1
