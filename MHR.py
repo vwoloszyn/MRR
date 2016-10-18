@@ -22,77 +22,16 @@ bin_matrix = []
 scores = []
 
 
-def helpf(x): 
-	try:
-		pos = x['helpful'].replace("[","").replace("]","").split(',')[0]
-		neg = x['helpful'].replace("[","").replace("]","").split(',')[1]
-		tot = x['helpful'].replace("[","").replace("]","").split(',')[1]
-		return float ( float(pos) /  float(tot) )
-	except:
-		return 0
 
-def tot(x): 
-	try:
-		return x['helpful'].replace("[","").replace("]","").split(',')[1]
-	except:
-		return 0
     
 
 def remove_stop(value):
-	for w in stopwords.words('english'):
-		value = re.sub(w, "", value)
-	return value
-
-def compute_distance_concept(comments):
-	comment_count = len(comments)
-	matrix = np.zeros((comment_count,comment_count ))
-
-	for row in range(comment_count):
-		for col in range(comment_count):
-			matrix[row, col] = compute_distance_wives(comments[row].split(),comments[col].split())
-			#print comments[row]
-
-	return matrix
+	for c in stopwords.words('english'):
+		value= value.replace(c,"")
+		#value = re.sub(w, "", value)
+	return value.lower()
 
 
-def compute_distance_wives(sentence1, sentence2):
-
-
-    # RETURN METODO_WIVES_AQUI()   
-    EPSILON = 0.0000000000000001
-    result = 0
-    
-    # identify common words
-    common_words = frozenset(sentence1) & frozenset(sentence2)
-    
-    if len(sentence1) > len(sentence2): 
-        maxLen = len(sentence1); 
-        minLen = len(sentence2) 
-    else: 
-        maxLen = len(sentence2); 
-        minLen = len(sentence1) 
-    
-    # calculates similarity
-    wordWeightMax = 0; wordWeightMin = 0;
-    for term in common_words:
-        if wordWeightMax < len(term): wordWeightMax = len(term)
-        if wordWeightMin > len(term): wordWeightMin = len(term)
-        negationWordWeightMax = 1 - wordWeightMax;
-        negationWordWeightMin = 1 - wordWeightMin;
-            
-        c1 = 1 if wordWeightMin == 0 else wordWeightMax / wordWeightMin;
-        c2 = 1 if wordWeightMax == 0 else wordWeightMin / wordWeightMax;
-        c3 = 1 if negationWordWeightMin == 0 else negationWordWeightMax / negationWordWeightMin;
-        c4 = 1 if negationWordWeightMax == 0 else negationWordWeightMin / negationWordWeightMax;
-
-        m1 = min(min(c1, c2), 1);
-        m2 = min(min(c3, c4), 1);
-
-        result += 0.5*(m1+m2);
-    
-    result =math.fabs(result / (minLen + maxLen - len(common_words) + EPSILON));
-#     print(result)
-    return result;
 
 
 def clear_string(value):
@@ -148,8 +87,8 @@ def create_matrix_sentence(comments):
 
 	comment_count = len(comments)
 	tfidf = TfidfVectorizer().fit_transform(comments)
-	matrix_sentences = (tfidf * tfidf.T).A
-	return 1 - matrix_sentences
+	matrix_sentences = 1- (tfidf * tfidf.T).A
+	return  matrix_sentences / np.amax(matrix_sentences)
     
 
 
@@ -162,9 +101,10 @@ def create_matrix_stars(stars):
 			#print "ditance" + str(matrix_stars[row][col])
 
 
-	matrix_stars = matrix_stars/5
+	matrix_stars = matrix_stars/4
 	matrix_stars=matrix_stars
-	return matrix_stars
+	return matrix_stars / np.amax(matrix_stars)
+    
 
 
 
@@ -375,7 +315,7 @@ def calc_ndcg(df, column,k):
 
 
 
-def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
+def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 
 	count=1
 	corr_global=[]
@@ -389,11 +329,13 @@ def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 	f1_global=[]
 
 	ndcg_global=[]
+	outputDataFrame=pd.DataFrame()
 
 	grouped=dfProducts[dfProducts['tot'].astype(int)>min_votes].groupby('asin')
 
 	for name, group in grouped:	
 		dffiltro = (dfProducts['asin']==name) & (dfProducts['tot'].astype(int)>min_votes) 
+		productDataFrame = pd.DataFrame(dfProducts[dffiltro].T.to_dict().values())
 
 		comments_count = dfProducts[dffiltro ]['tot'].values
 		if ( (len(comments_count)>min_comments) ):
@@ -410,9 +352,10 @@ def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 
 			scores= getMostSalientWithStar(clear_sentences,stars,10,alpha,beta)
 
-			dfProducts.ix[dffiltro,'powerWithStar']=scores
-
-
+			
+			
+			productDataFrame['powerWithStar']=scores
+			outputDataFrame = pd.concat([outputDataFrame, productDataFrame])
 
 			#########################################
 			#############  METRICS  ################
@@ -449,7 +392,7 @@ def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 
 	#
 
-	return dfProducts,ndcg_global
+	return outputDataFrame,ndcg_global
 
 
 
