@@ -17,83 +17,21 @@ import matplotlib.pyplot as plt
 
 
 
+matrix = []
+bin_matrix = []
+scores = []
 
-#filtrar somente o produto com a maior quantidade de comentarios
-##x=dfProducts.groupby('asin').size().sort_values(ascending=0)[:2]
-##mylist= list(x.keys())
-##dfProducts = dfProducts[dfProducts['asin'].isin(mylist)]
 
-def helpf(x): 
-	try:
-		pos = x['helpful'].replace("[","").replace("]","").split(',')[0]
-		neg = x['helpful'].replace("[","").replace("]","").split(',')[1]
-		tot = x['helpful'].replace("[","").replace("]","").split(',')[1]
-		return float ( float(pos) /  float(tot) )
-	except:
-		return 0
 
-def tot(x): 
-	try:
-		return x['helpful'].replace("[","").replace("]","").split(',')[1]
-	except:
-		return 0
     
 
 def remove_stop(value):
-	for w in stopwords.words('english'):
-		value = re.sub(w, "", value)
-	return value
-
-def compute_distance_concept(comments):
-	comment_count = len(comments)
-	matrix = np.zeros((comment_count,comment_count ))
-
-	for row in range(comment_count):
-		for col in range(comment_count):
-			matrix[row, col] = compute_distance_wives(comments[row].split(),comments[col].split())
-			#print comments[row]
-
-	return matrix
+	for c in stopwords.words('english'):
+		value= value.replace(c,"")
+		#value = re.sub(w, "", value)
+	return value.lower()
 
 
-def compute_distance_wives(sentence1, sentence2):
-
-
-    # RETURN METODO_WIVES_AQUI()   
-    EPSILON = 0.0000000000000001
-    result = 0
-    
-    # identify common words
-    common_words = frozenset(sentence1) & frozenset(sentence2)
-    
-    if len(sentence1) > len(sentence2): 
-        maxLen = len(sentence1); 
-        minLen = len(sentence2) 
-    else: 
-        maxLen = len(sentence2); 
-        minLen = len(sentence1) 
-    
-    # calculates similarity
-    wordWeightMax = 0; wordWeightMin = 0;
-    for term in common_words:
-        if wordWeightMax < len(term): wordWeightMax = len(term)
-        if wordWeightMin > len(term): wordWeightMin = len(term)
-        negationWordWeightMax = 1 - wordWeightMax;
-        negationWordWeightMin = 1 - wordWeightMin;
-            
-        c1 = 1 if wordWeightMin == 0 else wordWeightMax / wordWeightMin;
-        c2 = 1 if wordWeightMax == 0 else wordWeightMin / wordWeightMax;
-        c3 = 1 if negationWordWeightMin == 0 else negationWordWeightMax / negationWordWeightMin;
-        c4 = 1 if negationWordWeightMax == 0 else negationWordWeightMin / negationWordWeightMax;
-
-        m1 = min(min(c1, c2), 1);
-        m2 = min(min(c3, c4), 1);
-
-        result += 0.5*(m1+m2);
-    
-    result =math.fabs(result / (minLen + maxLen - len(common_words) + EPSILON));
-#     print(result)
-    return result;
 
 
 def clear_string(value):
@@ -149,8 +87,8 @@ def create_matrix_sentence(comments):
 
 	comment_count = len(comments)
 	tfidf = TfidfVectorizer().fit_transform(comments)
-	matrix_sentences = (tfidf * tfidf.T).A
-	return 1 - matrix_sentences
+	matrix_sentences = 1- (tfidf * tfidf.T).A
+	return  matrix_sentences / np.amax(matrix_sentences)
     
 
 
@@ -163,17 +101,25 @@ def create_matrix_stars(stars):
 			#print "ditance" + str(matrix_stars[row][col])
 
 
-	matrix_stars = matrix_stars/5
+	matrix_stars = matrix_stars/4
 	matrix_stars=matrix_stars
-	return matrix_stars
+	return matrix_stars / np.amax(matrix_stars)
+    
 
 
 
-def getMostSalientWithStar(comments, stars, comments_count):
+def getMostSalientWithStar(comments, stars, comments_count,alpha=0.9,beta=-0.12):
 
-	threshold = 0.01
+	global matrix
+	global bin_matrix
+	global scores
 
-	alpha=0.9
+	bin_matrix=[]
+	matrix =[]
+	scores = []
+	#threshold = beta
+
+	#alpha=0.9
 
 
 	matrix_sentences = create_matrix_sentence(comments )
@@ -192,20 +138,22 @@ def getMostSalientWithStar(comments, stars, comments_count):
 	#matrix_stars=(1-alpha)* matrix_stars
 	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
 
-	threshold = np.mean(matrix)*0.88
+	bin_matrix=np.zeros((len(comments), len(comments)))
+
+	threshold = np.mean(matrix)*(1+beta)
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
 			if matrix[row, col] < threshold:
-			    matrix[row, col] = 1.0
+			    bin_matrix[row, col] = 1.0
 			    #degrees[row] += 1
 			else:
-			    matrix[row, col] = 0
+			    bin_matrix[row, col] = 0
 
 	
 	#print matrix
 	pr1 = PageRank_NoTeleport()
-	scores = pr1.compute(matrix)
+	scores = pr1.compute(bin_matrix)
 	
 	#print scores
 	
@@ -327,6 +275,15 @@ def ndcg_at_k(r, k, method=0):
     return dcg_at_k(r, k, method) / dcg_max
 
 
+def getMatrix():
+	global matrix
+	global bin_matrix
+	return matrix,bin_matrix
+
+def getScores():
+	global scores
+	return scores
+
 
 def calc_ndcg(df, column,k):
     min_votes=5
@@ -358,7 +315,7 @@ def calc_ndcg(df, column,k):
 
 
 
-def executeFromDf(dfProducts):
+def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 
 	count=1
 	corr_global=[]
@@ -372,11 +329,13 @@ def executeFromDf(dfProducts):
 	f1_global=[]
 
 	ndcg_global=[]
+	outputDataFrame=pd.DataFrame()
 
 	grouped=dfProducts[dfProducts['tot'].astype(int)>min_votes].groupby('asin')
 
 	for name, group in grouped:	
 		dffiltro = (dfProducts['asin']==name) & (dfProducts['tot'].astype(int)>min_votes) 
+		productDataFrame = pd.DataFrame(dfProducts[dffiltro].T.to_dict().values())
 
 		comments_count = dfProducts[dffiltro ]['tot'].values
 		if ( (len(comments_count)>min_comments) ):
@@ -391,11 +350,12 @@ def executeFromDf(dfProducts):
 				stars.append(float(s['overall']))
 
 
-			scores= getMostSalientWithStar(clear_sentences,stars,10)
+			scores= getMostSalientWithStar(clear_sentences,stars,10,alpha,beta)
 
-			dfProducts.ix[dffiltro,'powerWithStar']=scores
-
-
+			
+			
+			productDataFrame['powerWithStar']=scores
+			outputDataFrame = pd.concat([outputDataFrame, productDataFrame])
 
 			#########################################
 			#############  METRICS  ################
@@ -432,7 +392,7 @@ def executeFromDf(dfProducts):
 
 	#
 
-	return dfProducts,ndcg_global
+	return outputDataFrame,ndcg_global
 
 
 
