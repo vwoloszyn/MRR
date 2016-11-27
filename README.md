@@ -1,2 +1,5 @@
 # MHR
-## A Unsupervised Algorithm for Selecting the Most Helpful Reviews based on graph approach
+we propose an unsupervised algorithm based on the concept of graph centrality to identify the most important reviews in a set of reviews. In graph theory, centrality (or salience) indicates the relative importance of one vertice with regard to others. In our approach, centrality is defined in terms of textual and rating similarity to a pseudo-review centroid. The intuition behind this approach is that salient reviews highlight aspects of the product that many other reviews frequently mention, with similar opinions, as expressed in terms of  ratings. Central reviews are thus relevant because they act as a summary of a set of reviews.
+
+
+Our experiments using reviews collected from the Amazon's website showed that the proposed approach based on centrality significantly outperforms the chosen baseline, both in terms of imitating  the human user perception of helpfulness,  as well as in terms of runtime performance. We tested reviews on electronic products and book, and our approach achieves better results in both domains. Additionally, we performed statistic tests on the obtained results, which reveal that MHR significantly outperforms (e.g., $p$-value $<$ 0.05) the baseline in terms of books reviews.
