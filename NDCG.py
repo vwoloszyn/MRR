@@ -104,10 +104,10 @@ def calc_ndcg(df, column,k):
     ndcg_global=[]
 
 
-    grouped=df[df['tot'].astype(int)>min_votes].groupby('asin')
+    grouped=df[df['tot'] > min_votes].groupby('asin')
 
     for name, group in grouped:
-        dffiltro = (df['asin']==name) & (df['tot'].astype(int)>min_votes)
+        dffiltro = (df['asin']==name) & (df['tot'] > min_votes)
 
         comments_count = df[dffiltro ]['tot'].values
         if ( (len(comments_count)>min_comments) ):
