@@ -308,7 +308,7 @@ def calc_ndcg(df, column,k):
             a = np.array(values_test)[ind]	
             ndcg = ndcg_at_k(a, k)
             
-            print "product="+str(name)+" ndcg="+str(ndcg)
+            print("product="+str(name)+" ndcg="+str(ndcg))
             ndcg_global.append(ndcg)
     return ndcg_global
 
@@ -335,7 +335,7 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 
 	for name, group in grouped:	
 		dffiltro = (dfProducts['asin']==name) & (dfProducts['tot'].astype(int)>min_votes) 
-		productDataFrame = pd.DataFrame(dfProducts[dffiltro].T.to_dict().values())
+		productDataFrame = pd.DataFrame(dfProducts[dffiltro])
 
 		comments_count = dfProducts[dffiltro ]['tot'].values
 		if ( (len(comments_count)>min_comments) ):
@@ -361,7 +361,7 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 			#############  METRICS  ################
 			#########################################
 
-			values_test = dfProducts[dffiltro]['helpfulness'].T.to_dict().values()
+			values_test = dfProducts[dffiltro]['helpfulness'].values
 			
 
 			k=5
@@ -372,13 +372,13 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 			ndcg_global.append(ndcg)
 
 
-			print "product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
+			print("product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")")
 			if __name__ == "__main__":
-				print "#"+str(count)+" product_id=" + str(name)
-				print "total comentarios:" +str(len(clear_sentences))
+				print("#"+str(count)+" product_id=" + str(name))
+				print("total comentarios:" +str(len(clear_sentences)))
 
 				#print "precision="+str(np.mean(precision_global))
-				print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
+				print("ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")")
 				#print "recall="+str(np.mean(recall_global))
 				#print "f1="+str(np.mean(f1_global))
 				#print "corr word_count="+ str(corr_word_local)
@@ -387,7 +387,7 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 				#print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
 
 				#print scores
-				print "##################################"
+				print("##################################")
 
 
 	#

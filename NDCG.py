@@ -17,7 +17,7 @@ def reload_package(root_module):
     # load each of the modules again; 
     # make old modules share state with new modules
     for key in loaded_package_modules:
-        print 'loading %s' % key
+        print('loading %s' % key)
         newmodule = __import__(key)
         oldmodule = loaded_package_modules[key]
         oldmodule.__dict__.clear()
@@ -129,13 +129,15 @@ def calc_ndcg_mean(df, column,k):
     return np.mean(x)
 
 def calc_corr(df, column):
+    df = df.dropna()
     correlation=[]
     grouped=df.groupby('asin')
 
     for name, group in grouped:
         dffiltro = (df['asin']==name)
         
-        helpfulness = df[dffiltro]['helpfulness'].T.to_dict().values()
-        scores = df[dffiltro][column].T.to_dict().values()
+        helpfulness = df[dffiltro]['helpfulness'].values
+        scores = df[dffiltro][column].values
+        
         correlation.append(np.corrcoef(helpfulness,scores)[0][1])
     return correlation
