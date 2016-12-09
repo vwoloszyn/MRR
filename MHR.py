@@ -140,7 +140,11 @@ def getMostSalientWithStar(comments, stars, comments_count,alpha=0.9,beta=-0.12)
 
 	bin_matrix=np.zeros((len(comments), len(comments)))
 
-	threshold = np.mean(matrix)*(1+beta)
+	if (beta<0):
+		threshold = np.mean(matrix)*(1+beta)
+	else:
+		threshold = beta -1
+		#print "passou aqui"
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
@@ -315,7 +319,7 @@ def calc_ndcg(df, column,k):
 
 
 
-def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
+def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
 
 	count=1
 	corr_global=[]
