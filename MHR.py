@@ -395,7 +395,13 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.1205):
 	return outputDataFrame,ndcg_global
 
 
-
+def tot(x): 
+    x = str(x['helpful'])
+    #print x.replace("[","").replace("]","").split(',')[1]
+    try:
+        return int(x.replace("[","").replace("]","").split(', ')[1])
+    except:
+        return 0
 
 
 
@@ -413,7 +419,7 @@ if __name__ == "__main__":
 
 
 	dfProducts = pd.read_csv(dataset)
-
+	dfProducts['tot']=dfProducts.apply(tot,axis=1)
 
 	#dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
 	#dfProducts['tot']=dfProducts.apply(tot,axis=1)
