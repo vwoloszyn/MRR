@@ -52,7 +52,7 @@ def func(params, xdata, ydata):
 #    df_extra,ndcg_mhr = mhr.executeFromDf(x,a,b)
 #    return ndcg_mhr
 
-x0 = np.array([0.893, -0.1205])
+x0 = np.array([0.9, -0.1205])
 ydata= np.ones(quant_prod,)
 xdata = reviews_features[reviews_features['asin'].isin(sample)]
 #print optimization.leastsq(func, x0, args=(xdata, ydata))

@@ -22,16 +22,78 @@ bin_matrix = []
 scores = []
 
 
+def helpf(x): 
+	try:
+		pos = x['helpful'].replace("[","").replace("]","").split(',')[0]
+		neg = x['helpful'].replace("[","").replace("]","").split(',')[1]
+		tot = x['helpful'].replace("[","").replace("]","").split(',')[1]
+		return float ( float(pos) /  float(tot) )
+	except:
+		return 0
 
+def tot(x): 
+	try:
+		return x['helpful'].replace("[","").replace("]","").split(',')[1]
+	except:
+		return 0
     
 
 def remove_stop(value):
-	for c in stopwords.words('english'):
-		value= value.replace(c,"")
+	for w in stopwords.words('english'):
+		value= value.replace(w,"")
 		#value = re.sub(w, "", value)
-	return value.lower()
+	return value
+
+def compute_distance_concept(comments):
+	comment_count = len(comments)
+	matrix = np.zeros((comment_count,comment_count ))
+
+	for row in range(comment_count):
+		for col in range(comment_count):
+			matrix[row, col] = compute_distance_wives(comments[row].split(),comments[col].split())
+			#print comments[row]
+
+	return matrix
 
 
+def compute_distance_wives(sentence1, sentence2):
+
+
+    # RETURN METODO_WIVES_AQUI()   
+    EPSILON = 0.0000000000000001
+    result = 0
+    
+    # identify common words
+    common_words = frozenset(sentence1) & frozenset(sentence2)
+    
+    if len(sentence1) > len(sentence2): 
+        maxLen = len(sentence1); 
+        minLen = len(sentence2) 
+    else: 
+        maxLen = len(sentence2); 
+        minLen = len(sentence1) 
+    
+    # calculates similarity
+    wordWeightMax = 0; wordWeightMin = 0;
+    for term in common_words:
+        if wordWeightMax < len(term): wordWeightMax = len(term)
+        if wordWeightMin > len(term): wordWeightMin = len(term)
+        negationWordWeightMax = 1 - wordWeightMax;
+        negationWordWeightMin = 1 - wordWeightMin;
+            
+        c1 = 1 if wordWeightMin == 0 else wordWeightMax / wordWeightMin;
+        c2 = 1 if wordWeightMax == 0 else wordWeightMin / wordWeightMax;
+        c3 = 1 if negationWordWeightMin == 0 else negationWordWeightMax / negationWordWeightMin;
+        c4 = 1 if negationWordWeightMax == 0 else negationWordWeightMin / negationWordWeightMax;
+
+        m1 = min(min(c1, c2), 1);
+        m2 = min(min(c3, c4), 1);
+
+        result += 0.5*(m1+m2);
+    
+    result =math.fabs(result / (minLen + maxLen - len(common_words) + EPSILON));
+#     print(result)
+    return result;
 
 
 def clear_string(value):
@@ -87,8 +149,8 @@ def create_matrix_sentence(comments):
 
 	comment_count = len(comments)
 	tfidf = TfidfVectorizer().fit_transform(comments)
-	matrix_sentences = 1- (tfidf * tfidf.T).A
-	return  matrix_sentences / np.amax(matrix_sentences)
+	matrix_sentences = (tfidf * tfidf.T).A
+	return 1 - matrix_sentences
     
 
 
@@ -101,10 +163,9 @@ def create_matrix_stars(stars):
 			#print "ditance" + str(matrix_stars[row][col])
 
 
-	matrix_stars = matrix_stars/4
+	matrix_stars = matrix_stars/5
 	matrix_stars=matrix_stars
-	return matrix_stars / np.amax(matrix_stars)
-    
+	return matrix_stars
 
 
 
@@ -140,11 +201,7 @@ def getMostSalientWithStar(comments, stars, comments_count,alpha=0.9,beta=-0.12)
 
 	bin_matrix=np.zeros((len(comments), len(comments)))
 
-	if (beta<0):
-		threshold = np.mean(matrix)*(1+beta)
-	else:
-		threshold = beta -1
-		#print "passou aqui"
+	threshold = np.mean(matrix)*(1+beta)
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
@@ -312,14 +369,14 @@ def calc_ndcg(df, column,k):
             a = np.array(values_test)[ind]	
             ndcg = ndcg_at_k(a, k)
             
-            print("product="+str(name)+" ndcg="+str(ndcg))
+            print "product="+str(name)+" ndcg="+str(ndcg)
             ndcg_global.append(ndcg)
     return ndcg_global
 
 
 
 
-def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
+def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 
 	count=1
 	corr_global=[]
@@ -356,16 +413,16 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
 
 			scores= getMostSalientWithStar(clear_sentences,stars,10,alpha,beta)
 
-			
-			
 			productDataFrame['powerWithStar']=scores
 			outputDataFrame = pd.concat([outputDataFrame, productDataFrame])
+
+
 
 			#########################################
 			#############  METRICS  ################
 			#########################################
 
-			values_test = dfProducts[dffiltro]['helpfulness'].values
+			values_test = productDataFrame['helpfulness'].T.to_dict().values()
 			
 
 			k=5
@@ -376,13 +433,13 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
 			ndcg_global.append(ndcg)
 
 
-			print("product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")")
+			print "product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
 			if __name__ == "__main__":
-				print("#"+str(count)+" product_id=" + str(name))
-				print("total comentarios:" +str(len(clear_sentences)))
+				print "#"+str(count)+" product_id=" + str(name)
+				print "total comentarios:" +str(len(clear_sentences))
 
 				#print "precision="+str(np.mean(precision_global))
-				print("ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")")
+				print "ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
 				#print "recall="+str(np.mean(recall_global))
 				#print "f1="+str(np.mean(f1_global))
 				#print "corr word_count="+ str(corr_word_local)
@@ -391,7 +448,7 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
 				#print "corr MHR=" + str(np.mean(corr_global)) + " (" + str(corr_local) + ")"
 
 				#print scores
-				print("##################################")
+				print "##################################"
 
 
 	#
@@ -399,13 +456,7 @@ def executeFromDf(dfProducts, alpha=0.893, beta=-0.12):
 	return outputDataFrame,ndcg_global
 
 
-def tot(x): 
-    x = str(x['helpful'])
-    #print x.replace("[","").replace("]","").split(',')[1]
-    try:
-        return int(x.replace("[","").replace("]","").split(', ')[1])
-    except:
-        return 0
+
 
 
 
@@ -423,7 +474,7 @@ if __name__ == "__main__":
 
 
 	dfProducts = pd.read_csv(dataset)
-	dfProducts['tot']=dfProducts.apply(tot,axis=1)
+
 
 	#dfProducts['helpfulness']=dfProducts.apply(helpf,axis=1)
 	#dfProducts['tot']=dfProducts.apply(tot,axis=1)
