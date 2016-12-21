@@ -376,7 +376,7 @@ def calc_ndcg(df, column,k):
 
 
 
-def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
+def executeFromDf(dfProducts, alpha=0.9, beta=-0.12, k=5):
 
 	count=1
 	corr_global=[]
@@ -425,7 +425,6 @@ def executeFromDf(dfProducts, alpha=0.9, beta=-0.12):
 			values_test = productDataFrame['helpfulness'].T.to_dict().values()
 			
 
-			k=5
 			ind = (-np.array(scores)).argsort()
 			a = np.array(values_test)[ind]	
 
