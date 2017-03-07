@@ -200,8 +200,10 @@ def getMostSalientWithStar(comments, stars, comments_count,alpha=0.9,beta=-0.12)
 	#matrix = 2* ((matrix_sentences*matrix_stars)/(matrix_sentences+matrix_stars))
 
 	bin_matrix=np.zeros((len(comments), len(comments)))
-
-	threshold = np.mean(matrix)*(1+beta)
+	if (beta>1):
+		threshold = beta -1
+	else:
+		threshold = np.mean(matrix)*(1+beta)
 	#print threshold
 	for row in range(len(matrix)):
 		for col in range(len(matrix)):
