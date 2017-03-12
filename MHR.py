@@ -160,7 +160,7 @@ def create_matrix_stars(stars):
 	for row in range(len(stars)):
 		for col in range(len(stars)):
 			matrix_stars[row][col]= abs(stars[row]-stars[col])
-			#print "ditance" + str(matrix_stars[row][col])
+			#print "distance" + str(matrix_stars[row][col])
 
 
 	matrix_stars = matrix_stars/5
