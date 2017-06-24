@@ -1,5 +1,16 @@
 # MHR
-we propose an unsupervised algorithm based on the concept of graph centrality to identify the most important reviews in a set of reviews. In graph theory, centrality (or salience) indicates the relative importance of one vertice with regard to others. In our approach, centrality is defined in terms of textual and rating similarity to a pseudo-review centroid. The intuition behind this approach is that salient reviews highlight aspects of the product that many other reviews frequently mention, with similar opinions, as expressed in terms of  ratings. Central reviews are thus relevant because they act as a summary of a set of reviews.
 
+**Author:** Vinicius Woloszyn, Henrique D. P. dos Santos, Leandro Krug Wives, and Karin Becker
 
-Our experiments using reviews collected from the Amazon's website showed that the proposed approach based on centrality significantly outperforms the chosen baseline, both in terms of imitating  the human user perception of helpfulness,  as well as in terms of runtime performance. We tested reviews on electronic products and book, and our approach achieves better results in both domains. Additionally, we performed statistic tests on the obtained results, which reveal that MHR significantly outperforms (e.g., $p$-value $<$ 0.05) the baseline in terms of books reviews.
+**Abstract:** The automatic detection of relevant reviews plays a major role in tasks such as opinion summarization, opinion-based recommendation, and opinion retrieval. Supervised approaches for ranking reviews by relevance rely on the existence of a significant, domain-dependent training data set. In this work, we propose MRR (Most Relevant Reviews), a new unsupervised algorithm that identifies relevant revisions based on the concept of graph centrality. 
+The intuition behind MRR is that central reviews highlight aspects of a product that many other reviews frequently mention, with similar opinions, as expressed in terms of ratings. MRR constructs a graph where nodes represent reviews, which are connected by edges when a minimum similarity between a pair of reviews is observed, and then employs PageRank to compute the centrality. The minimum similarity is graph-specific, and takes into account how reviews are written in specific domains. The similarity function does not require extensive pre-processing, thus reducing the computational cost.   
+Using reviews from books and electronics products, our approach has outperformed the two unsupervised baselines and shown a comparable performance with two supervised regression models in a specific setting. 
+MRR has also achieved a significantly superior run-time performance in a comparison with the unsupervised baselines.
+
+**Keywords:** opinion retrieval, unsupervised algorithm, relevant reviews.
+
+Full text available soon.
+
+**Complete Reference:** Vinicius Woloszyn, Henrique D. P. dos Santos, Leandro Krug Wives, and Karin Becker. 2017. MRR: an Unsupervised Algorithm to Rank Reviews by Rel-evance. InProceedings of WI ’17, Leipzig, Germany, August 23-26, 2017,7 pages.DOI: 10.1145/3106426.3106444
+
+[Bibtex](https://raw.githubusercontent.com/vwoloszyn/MRR/master/woloszyn2017mrr.bib)
