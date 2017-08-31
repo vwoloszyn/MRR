@@ -9,7 +9,8 @@ MRR has also achieved a significantly superior run-time performance in a compari
 
 **Keywords:** opinion retrieval, unsupervised algorithm, relevant reviews.
 
-Full text available soon.
+[Full text](http://dl.acm.org/citation.cfm?id=3106444) , 
+[Slides](https://raw.githubusercontent.com/vwoloszyn/MRR/master/presentation.pdf)
 
 **Complete Reference:** Vinicius Woloszyn, Henrique D. P. dos Santos, Leandro Krug Wives, and Karin Becker. 2017. MRR: an Unsupervised Algorithm to Rank Reviews by Rel-evance. InProceedings of WI ’17, Leipzig, Germany, August 23-26, 2017,7 pages.DOI: 10.1145/3106426.3106444
 
