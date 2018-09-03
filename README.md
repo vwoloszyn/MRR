@@ -1,4 +1,4 @@
-# MHR
+# MRR
 
 **Author:** Vinicius Woloszyn, Henrique D. P. dos Santos, Leandro Krug Wives, and Karin Becker
 
