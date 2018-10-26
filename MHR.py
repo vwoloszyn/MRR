@@ -434,7 +434,7 @@ def executeFromDf(dfProducts, alpha=0.9, beta=-0.12, k=5):
 			ndcg_global.append(ndcg)
 
 
-			print "product="+str(name) + " ndcg="+str(np.mean(ndcg_global))+ " (" + str(ndcg) + ")"
+			print "product="+str(name) + " quant_documents=" +str(len(comments_count))  +  " ndcg_global="+str(np.mean(ndcg_global))+ " ndcg_local=" + str(ndcg) 
 			if __name__ == "__main__":
 				print "#"+str(count)+" product_id=" + str(name)
 				print "total comentarios:" +str(len(clear_sentences))
